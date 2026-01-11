@@ -1,5 +1,7 @@
 # Kraken MP3 Player - Project Context
 
+**GitHub Repository:** https://github.com/krakenunbound/kraken-mp3
+
 ## Overview
 A Winamp-style desktop MP3 player built with Electron, featuring an ocean/Kraken theme with bioluminescent visual effects.
 
