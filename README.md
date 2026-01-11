@@ -2,6 +2,12 @@
 
 A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring customizable particle effects, audio visualizers, and rotating background wallpapers.
 
+## Screenshots
+
+![Default View](screenshots/Default.jpg)
+![Effects Menu](screenshots/effects.jpg)
+![File Selector](screenshots/fileselector.jpg)
+
 ## Features
 
 - **Compact Design**: Small footprint, resizable interface (500x360 default)
