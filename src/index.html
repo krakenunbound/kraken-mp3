@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kraken MP3</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Background layers -->
+    <div id="backgroundLayer" class="background-layer"></div>
+    <canvas id="bubblesCanvas" class="bubbles-canvas"></canvas>
+    <canvas id="particlesCanvas" class="particles-canvas"></canvas>
+    <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
+
+    <!-- Main player container -->
+    <div class="player-container">
+        <!-- Title bar (draggable) -->
+        <div class="title-bar" id="titleBar">
+            <div class="title-bar-left">
+                <span class="app-title">KRAKEN MP3</span>
+            </div>
+            <div class="title-bar-controls">
+                <button class="title-btn" id="btnAlwaysOnTop" title="Always on top">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                    </svg>
+                </button>
+                <button class="title-btn" id="btnMinimize" title="Minimize">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                        <path d="M19 13H5v-2h14v2z" />
+                    </svg>
+                </button>
+                <button class="title-btn title-btn-close" id="btnClose" title="Close">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Track info display -->
+        <div class="track-display">
+            <div class="album-art-container">
+                <div id="albumArt" class="album-art">
+                    <svg viewBox="0 0 200 240" class="kraken-svg default-art">
+                        <defs>
+                            <linearGradient id="mantleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#2d7a9c" />
+                                <stop offset="50%" style="stop-color:#3b9ebe" />
+                                <stop offset="100%" style="stop-color:#1a5a7a" />
+                            </linearGradient>
+                            <linearGradient id="tentacleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#3b9ebe" />
+                                <stop offset="100%" style="stop-color:#1a4a5a" />
+                            </linearGradient>
+                            <radialGradient id="glowSpot" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                                <stop offset="30%" style="stop-color:#7dd3fc;stop-opacity:0.9" />
+                                <stop offset="100%" style="stop-color:#3b9ebe;stop-opacity:0" />
+                            </radialGradient>
+                        </defs>
+                        <g class="mantle-group">
+                            <ellipse cx="100" cy="58" rx="52" ry="48" fill="#1a4a5a" opacity="0.5" />
+                            <path class="mantle"
+                                d="M100 10 Q145 10 160 45 Q170 70 165 95 Q160 115 140 120 Q120 125 100 125 Q80 125 60 120 Q40 115 35 95 Q30 70 40 45 Q55 10 100 10Z"
+                                fill="url(#mantleGradient)" />
+                        </g>
+                        <g class="tentacles-front">
+                            <path class="tentacle t1"
+                                d="M60 115 Q35 145 25 180 Q20 210 35 235 Q38 240 42 235 Q48 220 45 200 Q50 170 70 140"
+                                fill="url(#tentacleGradient)" />
+                            <path class="tentacle t2"
+                                d="M75 120 Q55 155 50 190 Q48 220 60 240 Q65 245 68 238 Q72 215 70 195 Q75 160 88 135"
+                                fill="url(#tentacleGradient)" />
+                            <path class="tentacle t5"
+                                d="M125 120 Q145 155 150 190 Q152 220 140 240 Q135 245 132 238 Q128 215 130 195 Q125 160 112 135"
+                                fill="url(#tentacleGradient)" />
+                            <path class="tentacle t6"
+                                d="M140 115 Q165 145 175 180 Q180 210 165 235 Q162 240 158 235 Q152 220 155 200 Q150 170 130 140"
+                                fill="url(#tentacleGradient)" />
+                        </g>
+                        <g class="bio-glow">
+                            <circle cx="65" cy="70" r="6" fill="url(#glowSpot)" class="glow-spot g1" />
+                            <circle cx="135" cy="70" r="6" fill="url(#glowSpot)" class="glow-spot g2" />
+                            <circle cx="100" cy="108" r="5" fill="url(#glowSpot)" class="glow-spot g5" />
+                        </g>
+                        <g class="eyes">
+                            <ellipse cx="75" cy="65" rx="12" ry="14" fill="#061520" />
+                            <ellipse cx="75" cy="65" rx="7" ry="9" fill="#020a10" class="pupil" />
+                            <ellipse cx="71" cy="60" rx="3" ry="3.5" fill="#ffffff" class="eye-shine" />
+                            <ellipse cx="125" cy="65" rx="12" ry="14" fill="#061520" />
+                            <ellipse cx="125" cy="65" rx="7" ry="9" fill="#020a10" class="pupil" />
+                            <ellipse cx="121" cy="60" rx="3" ry="3.5" fill="#ffffff" class="eye-shine" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <div class="track-info">
+                <div class="track-title" id="trackTitle">No Track Loaded</div>
+                <div class="track-artist" id="trackArtist">Drop files or click to open</div>
+                <div class="track-details">
+                    <span id="trackAlbum" class="track-album"></span>
+                    <span id="trackNumber" class="track-number"></span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Scrolling Ticker (Full Width) -->
+        <div class="scrolling-comment-container">
+            <div class="scrolling-comment" id="trackComment"></div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-handle" id="progressHandle"></div>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="controls-left">
+                <button class="control-btn small" id="btnShuffle" title="Shuffle">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+                    </svg>
+                </button>
+                <button class="control-btn small" id="btnRepeat" title="Repeat">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="controls-center">
+                <button class="control-btn" id="btnPrev" title="Previous">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                    </svg>
+                </button>
+                <button class="control-btn play-btn" id="btnPlay" title="Play">
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIcon" style="display: none;">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                    </svg>
+                </button>
+                <button class="control-btn" id="btnNext" title="Next">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="controls-right">
+                <div class="effects-menu-container">
+                    <button class="control-btn small" id="btnEffects" title="Effects Menu (~)">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+                        </svg>
+                    </button>
+                    <div class="effects-menu" id="effectsMenu">
+                        <div class="effects-menu-header">Effects & Visualizers</div>
+
+                        <!-- Particle Effects Section -->
+                        <div class="effects-section">
+                            <div class="effects-section-title">Particle Effects</div>
+                            <div class="effect-buttons">
+                                <button class="effect-btn" data-effect="none" title="No particles">Off</button>
+                                <button class="effect-btn active" data-effect="bubbles"
+                                    title="Rising bubbles">Bubbles</button>
+                                <button class="effect-btn" data-effect="rain" title="Falling rain">Rain</button>
+                                <button class="effect-btn" data-effect="stars" title="Shooting stars">Stars</button>
+                                <button class="effect-btn" data-effect="embers" title="Rising embers">Embers</button>
+                                <button class="effect-btn" data-effect="dust" title="Floating dust motes">Dust</button>
+                                <button class="effect-btn" data-effect="snow" title="Falling snow">Snow</button>
+                                <button class="effect-btn" data-effect="fireflies"
+                                    title="Glowing fireflies">Fireflies</button>
+                            </div>
+                        </div>
+
+                        <!-- Effect Settings -->
+                        <div class="effects-section">
+                            <div class="effects-section-title">Particle Settings</div>
+                            <div class="effect-slider-group">
+                                <label>Quantity</label>
+                                <input type="range" id="effectQuantity" min="5" max="100" value="25">
+                                <span id="effectQuantityVal">25</span>
+                            </div>
+                            <div class="effect-slider-group">
+                                <label>Size</label>
+                                <input type="range" id="effectSize" min="1" max="20" value="8">
+                                <span id="effectSizeVal">8</span>
+                            </div>
+                            <div class="effect-slider-group">
+                                <label>Speed</label>
+                                <input type="range" id="effectSpeed" min="1" max="100" value="30">
+                                <span id="effectSpeedVal">30</span>
+                            </div>
+                        </div>
+
+                        <!-- Visualizers Section -->
+                        <div class="effects-section">
+                            <div class="effects-section-title">Audio Visualizers</div>
+                            <div class="effect-buttons">
+                                <button class="effect-btn viz-btn" data-viz="none" title="No visualizer">Off</button>
+                                <button class="effect-btn viz-btn" data-viz="bars" title="Classic bars">Bars</button>
+                                <button class="effect-btn viz-btn" data-viz="wave" title="Waveform">Wave</button>
+                                <button class="effect-btn viz-btn" data-viz="circle"
+                                    title="Circular visualizer">Circle</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="volume-control">
+                    <button class="control-btn small" id="btnMute" title="Mute">
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="volumeIcon">
+                            <path
+                                d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="muteIcon" style="display: none;">
+                            <path
+                                d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                        </svg>
+                    </button>
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+                </div>
+                <button class="control-btn small" id="btnOpen" title="Open Files">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H5V8h14v10z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden audio element -->
+    <audio id="audioPlayer"></audio>
+
+    <!-- Drop overlay -->
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-message">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+            </svg>
+            <span>Drop audio files here</span>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

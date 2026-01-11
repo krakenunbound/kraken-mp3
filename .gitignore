@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output (releases uploaded to GitHub Releases)
+dist/
+
+# Sample audio files
+mp3/
+
+# Local IDE/tool settings
+.claude/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug logs
+*.log
+npm-debug.log*
