@@ -604,13 +604,15 @@ body {
     bottom: 100%;
     right: 0;
     margin-bottom: 8px;
-    width: 280px;
+    width: 320px;
     background: rgba(21, 32, 48, 0.98);
     border: 1px solid var(--accent);
     border-radius: 8px;
     padding: 10px;
     z-index: 1000;
     box-shadow: 0 -4px 20px rgba(59, 158, 190, 0.3);
+    max-height: 340px;
+    overflow-y: auto;
 }
 
 .effects-menu.active {
@@ -719,6 +721,126 @@ body {
     color: var(--accent);
     width: 24px;
     text-align: right;
+}
+
+.eq-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.eq-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.eq-controls .effect-btn {
+    flex: 1;
+    min-width: 0;
+}
+
+.eq-preset {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.eq-preset label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    width: 50px;
+}
+
+.eq-preset select {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+
+.eq-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.eq-slider-group label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.eq-slider-group input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--bg-card);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.eq-slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.eq-slider-group span {
+    font-size: 10px;
+    color: var(--accent);
+    width: 36px;
+    text-align: right;
+}
+
+.eq-sliders {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.eq-band {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 22px;
+}
+
+.eq-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 6px;
+    height: 70px;
+    background: var(--bg-card);
+    border-radius: 3px;
+    cursor: pointer;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}
+
+.eq-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.eq-band-label {
+    font-size: 9px;
+    color: var(--text-muted);
 }
 
 /* Visualizer canvas */

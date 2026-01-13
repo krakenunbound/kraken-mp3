@@ -17,6 +17,7 @@ A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring
   - Per-effect settings for quantity, size, and speed
   - Particle burst effects on track change
   - 3 audio visualizers: Bars, Waveform, Circle
+  - 10-band graphic EQ with presets, preamp, and custom tuning
   - Rotating background wallpapers with smooth crossfade
   - Animated Kraken logo as default album art
 - **Audio Support**: MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS
@@ -39,7 +40,7 @@ A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring
 
 ### Windows Installer
 
-1. Download `Kraken MP3 Setup 1.0.0.exe` from the releases
+1. Download `Kraken MP3 Setup 1.0.1.exe` from the releases
 2. Run the installer (you may need to click "More info" → "Run anyway" on Windows SmartScreen)
 3. Choose installation directory and options
 4. The installer will:
@@ -78,7 +79,7 @@ The `Kraken_MP3_Portable.exe` runs without installation. It extracts to a temp f
    ```
 
 3. Output files in the `dist` folder:
-   - `Kraken MP3 Setup 1.0.0.exe` - Windows installer
+   - `Kraken MP3 Setup 1.0.1.exe` - Windows installer
    - `Kraken_MP3_Portable.exe` - Portable single-file executable
    - `win-unpacked/` - Unpacked application folder
 
