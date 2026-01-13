@@ -42,6 +42,27 @@ const defaultEffectSettings = {
 let perEffectSettings = JSON.parse(JSON.stringify(defaultEffectSettings));
 let effectSettings = perEffectSettings.bubbles; // Current effect's settings
 
+// Graphic EQ settings
+const eqFrequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+const defaultEqSettings = {
+    enabled: false,
+    preamp: 0,
+    bands: eqFrequencies.map(() => 0),
+    preset: 'flat'
+};
+const eqPresets = {
+    flat: { preamp: 0, bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    rock: { preamp: 0, bands: [3, 2, 1, 0, -1, -1, 1, 2, 3, 4] },
+    pop: { preamp: 0, bands: [-1, 1, 2, 3, 1, -1, -1, 0, 1, 2] },
+    jazz: { preamp: 0, bands: [2, 1, 0, 1, 2, 2, 1, 0, 1, 2] },
+    classical: { preamp: 0, bands: [0, 0, -1, -2, -1, 1, 2, 3, 4, 5] },
+    'bass-boost': { preamp: 0, bands: [5, 4, 3, 2, 1, 0, -1, -2, -3, -4] }
+};
+let eqEnabled = defaultEqSettings.enabled;
+let eqPreampDb = defaultEqSettings.preamp;
+let eqBandGains = [...defaultEqSettings.bands];
+let eqPreset = defaultEqSettings.preset;
+
 // Canvas contexts
 let bubblesCtx = null;
 let particlesCtx = null;
@@ -54,6 +75,8 @@ let audioContext = null;
 let analyser = null;
 let dataArray = null;
 let audioSource = null;
+let eqPreampNode = null;
+let eqFilters = [];
 
 // Ticker state
 let tickerText = '';
@@ -84,6 +107,12 @@ const particlesCanvas = document.getElementById('particlesCanvas');
 const visualizerCanvas = document.getElementById('visualizerCanvas');
 const dropOverlay = document.getElementById('dropOverlay');
 const effectsMenu = document.getElementById('effectsMenu');
+const eqToggle = document.getElementById('eqToggle');
+const eqReset = document.getElementById('eqReset');
+const eqPresetSelect = document.getElementById('eqPreset');
+const eqPreampSlider = document.getElementById('eqPreamp');
+const eqPreampVal = document.getElementById('eqPreampVal');
+const eqBandSliders = Array.from(document.querySelectorAll('.eq-slider'));
 
 // Buttons
 const btnPlay = document.getElementById('btnPlay');
@@ -153,6 +182,13 @@ function loadSettings() {
     currentViz = settings.visualizer ?? 'none';
     isShuffle = settings.shuffle ?? false;
     repeatMode = settings.repeat ?? 0;
+    const storedEq = settings.eq ?? {};
+    eqEnabled = storedEq.enabled ?? defaultEqSettings.enabled;
+    eqPreampDb = storedEq.preamp ?? defaultEqSettings.preamp;
+    eqBandGains = Array.isArray(storedEq.bands) && storedEq.bands.length === eqFrequencies.length
+        ? [...storedEq.bands]
+        : [...defaultEqSettings.bands];
+    eqPreset = storedEq.preset ?? defaultEqSettings.preset;
 
     // Load per-effect settings, merging with defaults
     if (settings.perEffectSettings) {
@@ -183,6 +219,8 @@ function loadSettings() {
     document.querySelectorAll('.effect-btn[data-viz]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.viz === currentViz);
     });
+
+    updateEqUI();
 }
 
 function updateSlidersForCurrentEffect() {
@@ -194,6 +232,48 @@ function updateSlidersForCurrentEffect() {
     effectSpeedVal.textContent = effectSettings.speed;
 }
 
+function updateEqUI() {
+    eqToggle.classList.toggle('active', eqEnabled);
+    eqToggle.textContent = eqEnabled ? 'EQ On' : 'EQ Off';
+    eqPresetSelect.value = eqPreset;
+    eqPreampSlider.value = eqPreampDb;
+    eqPreampVal.textContent = `${eqPreampDb} dB`;
+    eqBandSliders.forEach((slider, index) => {
+        slider.value = eqBandGains[index] ?? 0;
+    });
+}
+
+function setEqPreset(presetName, { updateSelect = true } = {}) {
+    const preset = eqPresets[presetName];
+    if (!preset) return;
+    eqPreset = presetName;
+    eqPreampDb = preset.preamp;
+    eqBandGains = [...preset.bands];
+    if (updateSelect) {
+        eqPresetSelect.value = presetName;
+    }
+    updateEqUI();
+    applyEqSettings();
+    saveSettings();
+}
+
+function markEqCustom() {
+    eqPreset = 'custom';
+    eqPresetSelect.value = 'custom';
+}
+
+function applyEqSettings() {
+    if (!audioContext) return;
+    if (eqPreampNode) {
+        const preampGain = eqEnabled ? Math.pow(10, eqPreampDb / 20) : 1;
+        eqPreampNode.gain.value = preampGain;
+    }
+    eqFilters.forEach((filter, index) => {
+        const gain = eqEnabled ? (eqBandGains[index] ?? 0) : 0;
+        filter.gain.value = gain;
+    });
+}
+
 function saveSettings() {
     localStorage.setItem('krakenMp3Settings', JSON.stringify({
         volume: volumeSlider.value,
@@ -201,7 +281,13 @@ function saveSettings() {
         visualizer: currentViz,
         perEffectSettings,  // Save all per-effect settings
         shuffle: isShuffle,
-        repeat: repeatMode
+        repeat: repeatMode,
+        eq: {
+            enabled: eqEnabled,
+            preamp: eqPreampDb,
+            bands: eqBandGains,
+            preset: eqPreset
+        }
     }));
 }
 
@@ -279,10 +365,28 @@ function initAudioContext() {
         analyser.fftSize = 256;
         dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        // Connect audio element to analyser
+        // Connect audio element to analyser (with EQ chain)
         audioSource = audioContext.createMediaElementSource(audio);
-        audioSource.connect(analyser);
+        eqPreampNode = audioContext.createGain();
+        eqFilters = eqFrequencies.map((frequency) => {
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'peaking';
+            filter.frequency.value = frequency;
+            filter.Q.value = 1;
+            filter.gain.value = 0;
+            return filter;
+        });
+
+        audioSource.connect(eqPreampNode);
+        let currentNode = eqPreampNode;
+        eqFilters.forEach((filter) => {
+            currentNode.connect(filter);
+            currentNode = filter;
+        });
+        currentNode.connect(analyser);
         analyser.connect(audioContext.destination);
+
+        applyEqSettings();
 
         console.log('Audio context initialized for visualizer');
     } catch (err) {
@@ -1029,6 +1133,46 @@ function setupEventListeners() {
         effectSpeedVal.textContent = val;
         initEffectParticles();
         saveSettings();
+    });
+
+    // Graphic EQ
+    eqToggle.addEventListener('click', () => {
+        eqEnabled = !eqEnabled;
+        updateEqUI();
+        applyEqSettings();
+        saveSettings();
+    });
+
+    eqReset.addEventListener('click', () => {
+        setEqPreset('flat');
+    });
+
+    eqPresetSelect.addEventListener('change', () => {
+        const presetName = eqPresetSelect.value;
+        if (presetName === 'custom') {
+            markEqCustom();
+            saveSettings();
+            return;
+        }
+        setEqPreset(presetName);
+    });
+
+    eqPreampSlider.addEventListener('input', () => {
+        eqPreampDb = parseFloat(eqPreampSlider.value);
+        eqPreampVal.textContent = `${eqPreampDb} dB`;
+        markEqCustom();
+        applyEqSettings();
+        saveSettings();
+    });
+
+    eqBandSliders.forEach((slider) => {
+        slider.addEventListener('input', () => {
+            const bandIndex = parseInt(slider.dataset.band, 10);
+            eqBandGains[bandIndex] = parseFloat(slider.value);
+            markEqCustom();
+            applyEqSettings();
+            saveSettings();
+        });
     });
 
     // Close menu when clicking outside
