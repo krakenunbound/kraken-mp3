@@ -1,4 +1,4 @@
-# Kraken MP3 Player - Project Context
+# Finished Project# Kraken MP3 Player - Project Context
 
 **GitHub Repository:** https://github.com/krakenunbound/kraken-mp3
 

@@ -1,6 +1,6 @@
 {
   "name": "kraken-mp3",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Kraken MP3 Player - Rising from the depths",
   "main": "src/main.js",
   "scripts": {
@@ -25,68 +25,67 @@
       "output": "dist"
     },
     "win": {
-      "target": [
-        "dir",
-        "nsis",
-        "portable"
-      ],
+      "target": "nsis",
       "icon": "assets/icons/icon.ico",
+      "legalTrademarks": "Kraken Unbound",
       "fileAssociations": [
         {
           "ext": "mp3",
           "name": "MP3 Audio File",
           "description": "MP3 Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         },
         {
           "ext": "flac",
           "name": "FLAC Audio File",
           "description": "FLAC Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         },
         {
           "ext": "wav",
           "name": "WAV Audio File",
           "description": "WAV Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         },
         {
           "ext": "ogg",
           "name": "OGG Audio File",
           "description": "OGG Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         },
         {
           "ext": "m4a",
           "name": "M4A Audio File",
           "description": "M4A Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         },
         {
           "ext": "aac",
           "name": "AAC Audio File",
           "description": "AAC Audio File",
-          "role": "Viewer"
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
         }
       ]
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
-      "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "runAfterFinish": false,
       "deleteAppDataOnUninstall": true,
-      "removeDefaultUninstallWelcomePage": true,
-      "include": "build/uninstaller.nsh"
-    },
-    "portable": {
-      "artifactName": "Kraken_MP3_Portable.exe"
+      "runAfterFinish": false
     },
     "files": [
       "src/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "package.json"
     ]
   }
 }

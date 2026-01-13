@@ -19,3 +19,8 @@ Thumbs.db
 # Debug logs
 *.log
 npm-debug.log*
+
+# Temporary Files
+tmpclaude-*
+
+winCodeSign_backup/
