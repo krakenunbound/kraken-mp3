@@ -368,14 +368,14 @@ html, body {
 .effects-menu-container { position: relative; }
 .effects-menu {
     display: none;
-    position: absolute; bottom: calc(100% + 4px); right: 0;
+    position: absolute; top: calc(100% + 4px); right: 0;
     width: 300px;
     background: rgba(14, 22, 34, 0.97);
     border: 1px solid var(--accent);
-    border-radius: 4px 4px 0 4px;
+    border-radius: 0 0 4px 4px;
     padding: 8px;
     z-index: 1000;
-    box-shadow: 0 -6px 20px rgba(59,158,190,0.3);
+    box-shadow: 0 6px 20px rgba(59,158,190,0.3);
     max-height: 320px; overflow-y: auto;
 }
 .effects-menu.active { display: block; }
