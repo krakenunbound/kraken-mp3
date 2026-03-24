@@ -245,6 +245,11 @@ html, body {
     font-size: 8px; font-weight: 700; color: var(--text-lo);
     width: 22px; text-align: right; letter-spacing: 0.5px;
 }
+.vb-value {
+    font-size: 8px; font-weight: 700; color: var(--lcd-text);
+    width: 24px; text-align: left; flex-shrink: 0;
+    font-family: 'Courier New', monospace;
+}
 .vb-slider {
     flex: 1; min-width: 0; height: 10px; -webkit-appearance: none;
     background: transparent; cursor: pointer;

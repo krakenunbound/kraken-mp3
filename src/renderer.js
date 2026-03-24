@@ -161,6 +161,8 @@ const muteIcon = document.getElementById('muteIcon');
 
 // Winamp display elements
 const balanceSlider = document.getElementById('balanceSlider');
+const volValue = document.getElementById('volValue');
+const balValue = document.getElementById('balValue');
 const trackBitrate = document.getElementById('trackBitrate');
 const trackSampleRate = document.getElementById('trackSampleRate');
 const monoInd = document.getElementById('monoInd');
@@ -1301,12 +1303,15 @@ function setupEventListeners() {
             if (stereoPannerNode) {
                 stereoPannerNode.pan.value = balanceSlider.value / 100;
             }
+            updateBalanceIndicator();
         });
         // Center on double-click
         balanceSlider.addEventListener('dblclick', () => {
             balanceSlider.value = 0;
             if (stereoPannerNode) stereoPannerNode.pan.value = 0;
+            updateBalanceIndicator();
         });
+        updateBalanceIndicator();
     }
 
     // Time mode toggle (elapsed / remaining)
@@ -1564,6 +1569,19 @@ function handleVolumeChange() {
 
 function updateVolumeSlider() {
     volumeSlider.style.setProperty('--vol-pct', volumeSlider.value + '%');
+    if (volValue) volValue.textContent = volumeSlider.value + '%';
+}
+
+function updateBalanceIndicator() {
+    if (!balValue) return;
+    const val = parseInt(balanceSlider.value);
+    if (val === 0) {
+        balValue.textContent = 'C';
+    } else if (val < 0) {
+        balValue.textContent = 'L' + Math.abs(val);
+    } else {
+        balValue.textContent = 'R' + val;
+    }
 }
 
 function toggleMute() {
