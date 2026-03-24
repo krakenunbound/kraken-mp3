@@ -6,14 +6,14 @@
 
 :root {
     /* Panel chrome */
-    --panel-bg:       rgba(20, 28, 40, 0.82);
-    --panel-bg-dark:  rgba(10, 16, 24, 0.88);
-    --panel-title-bg: linear-gradient(180deg, #1a3a55 0%, #0e2035 100%);
+    --panel-bg:       rgba(20, 28, 40, 0.75);
+    --panel-bg-dark:  rgba(10, 16, 24, 0.85);
+    --panel-title-bg: linear-gradient(180deg, rgba(26, 58, 85, 0.8) 0%, rgba(14, 32, 53, 0.8) 100%);
     --bevel-light:    #2a4060;
     --bevel-dark:     #050c14;
 
     /* LCD display */
-    --lcd-bg:         #060e14;
+    --lcd-bg:         rgba(6, 14, 20, 0.7);
     --lcd-text:       #3ce0f8;
     --lcd-text-dim:   #0a6070;
     --lcd-glow:       rgba(60, 224, 248, 0.5);
@@ -30,7 +30,7 @@
     --text-lo:        #3a5878;
 
     /* Buttons */
-    --btn-bg:         #111a26;
+    --btn-bg:         rgba(17, 26, 38, 0.8);
     --btn-hover:      #1a2a3c;
     --btn-active-bg:  rgba(59,158,190,0.18);
 
@@ -61,10 +61,10 @@ html, body {
     z-index: 1; opacity: 0.35;
     transition: background-image 1.2s ease-in-out;
 }
-.bubbles-canvas  { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
-.particles-canvas{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
-/* Visualizer lives inside .winamp-layout so it shows through semi-transparent panels */
-.visualizer-canvas{ position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+/* All effect canvases live inside .winamp-layout, behind panels via negative z-index */
+.bubbles-canvas  { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -3; pointer-events: none; }
+.particles-canvas{ position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+.visualizer-canvas{ position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
 /* ── Layout container ─────────────────────────────────────────── */
 .winamp-layout {
@@ -239,7 +239,6 @@ html, body {
 .disp-right {
     flex-shrink: 0; display: flex; flex-direction: column;
     justify-content: center; gap: 8px; width: 108px;
-    overflow: hidden;
 }
 .vb-row { display: flex; align-items: center; gap: 4px; }
 .vb-label {
@@ -247,8 +246,9 @@ html, body {
     width: 22px; text-align: right; letter-spacing: 0.5px;
 }
 .vb-slider {
-    flex: 1; height: 10px; -webkit-appearance: none;
+    flex: 1; min-width: 0; height: 10px; -webkit-appearance: none;
     background: transparent; cursor: pointer;
+    padding: 0 7px; /* contain the 14px thumb within bounds */
 }
 .vb-slider::-webkit-slider-runnable-track {
     height: 5px;
