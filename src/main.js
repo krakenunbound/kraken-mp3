@@ -33,21 +33,21 @@ function isAudioFile(filePath) {
 }
 
 function createWindow() {
-    // Default dimensions (larger to show effects menu comfortably)
+    // Winamp-style: fixed width, flexible height for panel stacking
     const windowWidth = 500;
-    const windowHeight = 360;
+    const windowHeight = 640;
 
     mainWindow = new BrowserWindow({
         width: windowWidth,
         height: windowHeight,
-        minWidth: 350,
-        minHeight: 250,
-        maxWidth: 800,
-        maxHeight: 600,
+        minWidth: 500,
+        minHeight: 145,
+        maxWidth: 600,
+        maxHeight: 1000,
         frame: false,
         transparent: false,
         resizable: true,
-        backgroundColor: '#0f1115',
+        backgroundColor: '#0a1018',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,

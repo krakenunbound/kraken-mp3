@@ -67,8 +67,25 @@ let eqPreset = defaultEqSettings.preset;
 let bubblesCtx = null;
 let particlesCtx = null;
 let visualizerCtx = null;
+let miniVizCtx = null;
 let effectParticles = [];
 let burstParticles = [];
+
+// Balance / panner
+let stereoPannerNode = null;
+
+// Panel visibility
+let showEqPanel = false;
+let showPlaylistPanel = true;
+
+// Playlist metadata (durations, display titles)
+let playlistMeta = []; // array of {title, duration} per playlist index
+
+// Selected playlist item
+let selectedPlaylistIdx = -1;
+
+// Time display mode: false = elapsed, true = remaining
+let showRemainingTime = false;
 
 // Audio context for visualizer
 let audioContext = null;
@@ -118,6 +135,7 @@ const eqBandSliders = Array.from(document.querySelectorAll('.eq-slider'));
 const btnPlay = document.getElementById('btnPlay');
 const btnPrev = document.getElementById('btnPrev');
 const btnNext = document.getElementById('btnNext');
+const btnStop = document.getElementById('btnStop');
 const btnShuffle = document.getElementById('btnShuffle');
 const btnRepeat = document.getElementById('btnRepeat');
 const btnMute = document.getElementById('btnMute');
@@ -127,11 +145,38 @@ const btnMinimize = document.getElementById('btnMinimize');
 const btnClose = document.getElementById('btnClose');
 const btnAlwaysOnTop = document.getElementById('btnAlwaysOnTop');
 
+// Panel toggle buttons
+const btnEqToggle = document.getElementById('btnEqToggle');
+const btnPlToggle = document.getElementById('btnPlToggle');
+const btnEqClose = document.getElementById('btnEqClose');
+const btnPlClose = document.getElementById('btnPlClose');
+const eqPanel = document.getElementById('eqPanel');
+const playlistPanel = document.getElementById('playlistPanel');
+
 // Icons
 const playIcon = document.getElementById('playIcon');
 const pauseIcon = document.getElementById('pauseIcon');
 const volumeIcon = document.getElementById('volumeIcon');
 const muteIcon = document.getElementById('muteIcon');
+
+// Winamp display elements
+const balanceSlider = document.getElementById('balanceSlider');
+const trackBitrate = document.getElementById('trackBitrate');
+const trackSampleRate = document.getElementById('trackSampleRate');
+const monoInd = document.getElementById('monoInd');
+const stereoInd = document.getElementById('stereoInd');
+const miniVizCanvas = document.getElementById('miniVizCanvas');
+const timeModeBtn = document.getElementById('timeModeBtn');
+
+// Playlist
+const playlistTracks = document.getElementById('playlistTracks');
+const plCurrentTime = document.getElementById('plCurrentTime');
+const plBtnAdd = document.getElementById('plBtnAdd');
+const plBtnRem = document.getElementById('plBtnRem');
+const plBtnSel = document.getElementById('plBtnSel');
+const plBtnMisc = document.getElementById('plBtnMisc');
+const plBtnFolder = document.getElementById('plBtnFolder');
+const plBtnClear = document.getElementById('plBtnClear');
 
 // Effect sliders
 const effectQuantitySlider = document.getElementById('effectQuantity');
@@ -205,6 +250,10 @@ function loadSettings() {
     // Set current effect's settings
     effectSettings = perEffectSettings[currentEffect] || perEffectSettings.bubbles;
 
+    // Panel visibility
+    showEqPanel = settings.showEqPanel ?? false;
+    showPlaylistPanel = settings.showPlaylistPanel ?? true;
+
     // Apply settings to UI
     if (isShuffle) btnShuffle.classList.add('active');
     if (repeatMode > 0) btnRepeat.classList.add('active');
@@ -221,6 +270,7 @@ function loadSettings() {
     });
 
     updateEqUI();
+    applyPanelVisibility();
 }
 
 function updateSlidersForCurrentEffect() {
@@ -234,10 +284,10 @@ function updateSlidersForCurrentEffect() {
 
 function updateEqUI() {
     eqToggle.classList.toggle('active', eqEnabled);
-    eqToggle.textContent = eqEnabled ? 'EQ On' : 'EQ Off';
-    eqPresetSelect.value = eqPreset;
-    eqPreampSlider.value = eqPreampDb;
-    eqPreampVal.textContent = `${eqPreampDb} dB`;
+    eqToggle.textContent = eqEnabled ? 'ON' : 'ON';
+    if (eqPresetSelect) eqPresetSelect.value = eqPreset;
+    if (eqPreampSlider) eqPreampSlider.value = eqPreampDb;
+    if (eqPreampVal) eqPreampVal.textContent = `${eqPreampDb > 0 ? '+' : ''}${eqPreampDb} dB preamp`;
     eqBandSliders.forEach((slider, index) => {
         slider.value = eqBandGains[index] ?? 0;
     });
@@ -279,9 +329,11 @@ function saveSettings() {
         volume: volumeSlider.value,
         effect: currentEffect,
         visualizer: currentViz,
-        perEffectSettings,  // Save all per-effect settings
+        perEffectSettings,
         shuffle: isShuffle,
         repeat: repeatMode,
+        showEqPanel,
+        showPlaylistPanel,
         eq: {
             enabled: eqEnabled,
             preamp: eqPreampDb,
@@ -330,10 +382,9 @@ function setBackground(imagePath, crossfade = false) {
         `;
         document.body.insertBefore(tempLayer, backgroundLayer);
 
-        // Fade in new background
-        // Match the opacity in styles.css (0.7) to prevent brightness jumping
+        // Fade in new background — match opacity in styles.css
         requestAnimationFrame(() => {
-            tempLayer.style.opacity = '0.7';
+            tempLayer.style.opacity = '0.35';
         });
 
         // After transition, update main layer and remove temp
@@ -383,7 +434,11 @@ function initAudioContext() {
             currentNode.connect(filter);
             currentNode = filter;
         });
-        currentNode.connect(analyser);
+        // Stereo panner (balance control)
+        stereoPannerNode = audioContext.createStereoPanner();
+        stereoPannerNode.pan.value = 0;
+        currentNode.connect(stereoPannerNode);
+        stereoPannerNode.connect(analyser);
         analyser.connect(audioContext.destination);
 
         applyEqSettings();
@@ -401,6 +456,7 @@ function initCanvases() {
     bubblesCtx = bubblesCanvas.getContext('2d');
     particlesCtx = particlesCanvas.getContext('2d');
     visualizerCtx = visualizerCanvas.getContext('2d');
+    if (miniVizCanvas) miniVizCtx = miniVizCanvas.getContext('2d');
 
     resizeCanvases();
     initEffectParticles();
@@ -594,6 +650,11 @@ function animationLoop(time = 0) {
     // Draw visualizer
     if (currentViz !== 'none' && analyser) {
         drawVisualizer();
+    }
+
+    // Draw mini visualizer in main display
+    if (miniVizCtx && analyser) {
+        drawMiniViz();
     }
 
     requestAnimationFrame(animationLoop);
@@ -1175,10 +1236,11 @@ function setupEventListeners() {
         });
     });
 
-    // Close menu when clicking outside
+    // Close effects menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.effects-menu-container')) {
+        if (!e.target.closest('#effectsMenu') && !e.target.closest('#btnEffects')) {
             effectsMenu.classList.remove('active');
+            btnEffects.classList.remove('active');
         }
     });
 
@@ -1226,8 +1288,66 @@ function setupEventListeners() {
         replacePlaylist([filePath]);
     });
 
-    // Double-click track display to open files
-    document.querySelector('.track-display').addEventListener('dblclick', openFileMenu);
+    // Double-click display area to open files
+    const dispCenter = document.querySelector('.disp-center');
+    if (dispCenter) dispCenter.addEventListener('dblclick', openFileMenu);
+
+    // Stop button
+    btnStop.addEventListener('click', stopAudio);
+
+    // Balance slider
+    if (balanceSlider) {
+        balanceSlider.addEventListener('input', () => {
+            if (stereoPannerNode) {
+                stereoPannerNode.pan.value = balanceSlider.value / 100;
+            }
+        });
+        // Center on double-click
+        balanceSlider.addEventListener('dblclick', () => {
+            balanceSlider.value = 0;
+            if (stereoPannerNode) stereoPannerNode.pan.value = 0;
+        });
+    }
+
+    // Time mode toggle (elapsed / remaining)
+    if (timeModeBtn) {
+        timeModeBtn.addEventListener('click', () => {
+            showRemainingTime = !showRemainingTime;
+            timeModeBtn.textContent = showRemainingTime ? '−' : '+';
+        });
+    }
+
+    // EQ panel toggle (title bar button)
+    if (btnEqToggle) btnEqToggle.addEventListener('click', () => { showEqPanel = !showEqPanel; applyPanelVisibility(); saveSettings(); });
+    if (btnEqClose) btnEqClose.addEventListener('click', () => { showEqPanel = false; applyPanelVisibility(); saveSettings(); });
+
+    // Playlist panel toggle
+    if (btnPlToggle) btnPlToggle.addEventListener('click', () => { showPlaylistPanel = !showPlaylistPanel; applyPanelVisibility(); saveSettings(); });
+    if (btnPlClose) btnPlClose.addEventListener('click', () => { showPlaylistPanel = false; applyPanelVisibility(); saveSettings(); });
+
+    // Playlist footer buttons
+    if (plBtnAdd) plBtnAdd.addEventListener('click', openFiles);
+    if (plBtnFolder) plBtnFolder.addEventListener('click', openFolder);
+    if (plBtnClear) plBtnClear.addEventListener('click', () => {
+        playlist = []; playlistMeta = []; currentIndex = 0; selectedPlaylistIdx = -1;
+        stopAudio(); renderPlaylist();
+        totalTimeEl.textContent = '0:00';
+        currentTimeEl.textContent = '0:00';
+        if (plCurrentTime) plCurrentTime.textContent = '0:00';
+        stopTicker();
+    });
+    if (plBtnRem) plBtnRem.addEventListener('click', () => {
+        if (selectedPlaylistIdx >= 0 && playlist.length > 0) {
+            playlist.splice(selectedPlaylistIdx, 1);
+            playlistMeta.splice(selectedPlaylistIdx, 1);
+            if (currentIndex >= selectedPlaylistIdx && currentIndex > 0) currentIndex--;
+            selectedPlaylistIdx = Math.min(selectedPlaylistIdx, playlist.length - 1);
+            renderPlaylist();
+        }
+    });
+    if (plBtnSel) plBtnSel.addEventListener('click', () => {
+        document.querySelectorAll('.pl-track').forEach(el => el.classList.add('pl-selected'));
+    });
 
     // Window resize
     window.addEventListener('resize', resizeCanvases);
@@ -1270,41 +1390,32 @@ function showFileMenuDialog() {
 
         const dialog = document.createElement('div');
         dialog.style.cssText = `
-            background: var(--bg-secondary);
+            background: var(--panel-bg);
             border: 1px solid var(--accent);
-            border-radius: 8px;
             padding: 20px;
             text-align: center;
         `;
 
         dialog.innerHTML = `
-            <div style="color: var(--accent); font-size: 14px; margin-bottom: 15px;">Open Music</div>
+            <div style="color: var(--accent-bright); font-size: 12px; margin-bottom: 15px; letter-spacing: 1px; text-transform: uppercase;">Open Music</div>
             <button id="openFilesBtn" style="
-                padding: 10px 20px;
-                margin: 5px;
-                background: var(--bg-card);
-                border: 1px solid var(--border-color);
-                color: var(--text-primary);
-                border-radius: 4px;
-                cursor: pointer;
+                padding: 8px 18px; margin: 4px;
+                background: var(--btn-bg);
+                border-top: 1px solid var(--bevel-light); border-left: 1px solid var(--bevel-light);
+                border-bottom: 1px solid var(--bevel-dark); border-right: 1px solid var(--bevel-dark);
+                color: var(--text-hi); font-size: 11px; cursor: pointer;
             ">Select Files</button>
             <button id="openFolderBtn" style="
-                padding: 10px 20px;
-                margin: 5px;
-                background: var(--bg-card);
-                border: 1px solid var(--border-color);
-                color: var(--text-primary);
-                border-radius: 4px;
-                cursor: pointer;
+                padding: 8px 18px; margin: 4px;
+                background: var(--btn-bg);
+                border-top: 1px solid var(--bevel-light); border-left: 1px solid var(--bevel-light);
+                border-bottom: 1px solid var(--bevel-dark); border-right: 1px solid var(--bevel-dark);
+                color: var(--text-hi); font-size: 11px; cursor: pointer;
             ">Select Folder</button>
             <button id="cancelBtn" style="
-                display: block;
-                margin: 15px auto 0;
-                padding: 5px 15px;
-                background: transparent;
-                border: none;
-                color: var(--text-muted);
-                cursor: pointer;
+                display: block; margin: 12px auto 0; padding: 4px 12px;
+                background: transparent; border: none;
+                color: var(--text-lo); font-size: 10px; cursor: pointer;
             ">Cancel</button>
         `;
 
@@ -1421,10 +1532,16 @@ function toggleRepeat() {
     repeatMode = (repeatMode + 1) % 3;
     btnRepeat.classList.toggle('active', repeatMode > 0);
 
+    // repeat-one: highlight in bright teal
     if (repeatMode === 2) {
-        btnRepeat.style.color = '#ff0';
+        btnRepeat.style.color = 'var(--lcd-text)';
+        btnRepeat.title = 'Repeat One (R)';
+    } else if (repeatMode === 1) {
+        btnRepeat.style.color = '';
+        btnRepeat.title = 'Repeat All (R)';
     } else {
         btnRepeat.style.color = '';
+        btnRepeat.title = 'Repeat Off (R)';
     }
 
     saveSettings();
@@ -1446,7 +1563,7 @@ function handleVolumeChange() {
 }
 
 function updateVolumeSlider() {
-    volumeSlider.style.setProperty('--volume-percent', volumeSlider.value + '%');
+    volumeSlider.style.setProperty('--vol-pct', volumeSlider.value + '%');
 }
 
 function toggleMute() {
@@ -1469,11 +1586,19 @@ function updateProgress() {
     progressFill.style.width = percent + '%';
     progressHandle.style.left = percent + '%';
 
-    currentTimeEl.textContent = formatTime(audio.currentTime);
+    if (showRemainingTime) {
+        const remaining = audio.duration - audio.currentTime;
+        currentTimeEl.textContent = '-' + formatTime(remaining);
+    } else {
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+    }
+    if (plCurrentTime) plCurrentTime.textContent = formatTime(audio.currentTime);
 }
 
 function handleMetadataLoaded() {
-    totalTimeEl.textContent = formatTime(audio.duration);
+    // Update total time - if playlist has multiple tracks, renderPlaylist will update
+    // to total playlist duration; for now show current track duration
+    if (totalTimeEl) totalTimeEl.textContent = formatTime(audio.duration);
 }
 
 function handleProgressClick(e) {
@@ -1607,17 +1732,32 @@ function isAudioFile(filePath) {
 }
 
 function replacePlaylist(files) {
-    // Deduplicate if needed? User probably wants exact files provided.
-    // However, if they open the same file twice, we usually allow it in a playlist?
-    // For "replace", we just take the new list.
     playlist = files;
-
-    // Reset state
+    playlistMeta = new Array(files.length).fill(null);
     currentIndex = 0;
-
-    // Play immediately
+    selectedPlaylistIdx = 0;
+    renderPlaylist();
     loadTrack(0);
     play();
+    loadAllPlaylistMeta();
+}
+
+async function loadAllPlaylistMeta() {
+    if (!musicMetadata) return;
+    const snapshot = playlist.slice();
+    for (let i = 0; i < snapshot.length; i++) {
+        if (snapshot[i] !== playlist[i]) break; // playlist changed, abort
+        if (i === currentIndex) continue; // already loaded by loadMetadata()
+        try {
+            const meta = await musicMetadata.parseFile(snapshot[i], { duration: true });
+            if (snapshot[i] !== playlist[i]) break;
+            playlistMeta[i] = playlistMeta[i] || {};
+            playlistMeta[i].title = meta.common.title || null;
+            playlistMeta[i].artist = meta.common.artist || null;
+            playlistMeta[i].duration = meta.format.duration || null;
+            renderPlaylist();
+        } catch (e) { /* skip unreadable files */ }
+    }
 }
 
 function addToPlaylist(files) {
@@ -1636,6 +1776,7 @@ async function loadTrack(index) {
     audio.src = filePath;
 
     await loadMetadata(filePath);
+    renderPlaylist();
 
     if (currentEffect !== 'none') {
         triggerTrackChangeEffect();
@@ -1649,40 +1790,81 @@ async function loadMetadata(filePath) {
     trackArtist.textContent = '';
     trackAlbum.textContent = '';
     trackNumber.textContent = '';
-    stopTicker(); // Clear any existing ticker
+    stopTicker();
 
-    albumArt.innerHTML = getDefaultArt();
+    // Reset display
+    if (trackBitrate) trackBitrate.textContent = '---';
+    if (trackSampleRate) trackSampleRate.textContent = '--';
+    if (monoInd) monoInd.classList.remove('lit');
+    if (stereoInd) stereoInd.classList.remove('lit');
+
+    // Build initial display text from filename
+    let displayTitle = filename;
+    let displayArtist = '';
 
     if (musicMetadata) {
         try {
             const metadata = await musicMetadata.parseFile(filePath);
-            const { common } = metadata;
+            const { common, format } = metadata;
 
-            if (common.title) trackTitle.textContent = common.title;
-            if (common.artist) trackArtist.textContent = common.artist;
+            if (common.title) {
+                trackTitle.textContent = common.title;
+                displayTitle = common.title;
+            }
+            if (common.artist) {
+                trackArtist.textContent = common.artist;
+                displayArtist = common.artist;
+            }
             if (common.album) trackAlbum.textContent = common.album;
             if (common.track?.no) {
                 trackNumber.textContent = `Track ${common.track.no}${common.track.of ? '/' + common.track.of : ''}`;
             }
-            if (common.comment?.[0]) {
-                // Comment can be string or object with .text property
-                const comment = common.comment[0];
-                const commentText = typeof comment === 'string' ? comment : (comment.text || String(comment));
-                console.log('Comment found:', commentText);
-                startTicker(commentText);
-            } else {
-                stopTicker();
+
+            // Bitrate & sample rate
+            if (format.bitrate && trackBitrate) {
+                trackBitrate.textContent = Math.round(format.bitrate / 1000);
+            }
+            if (format.sampleRate && trackSampleRate) {
+                trackSampleRate.textContent = Math.round(format.sampleRate / 1000);
             }
 
+            // Mono / stereo
+            const channels = format.numberOfChannels || 2;
+            if (monoInd) monoInd.classList.toggle('lit', channels === 1);
+            if (stereoInd) stereoInd.classList.toggle('lit', channels >= 2);
+
+            // Album art
             if (common.picture && common.picture.length > 0) {
                 const pic = common.picture[0];
                 const blob = new Blob([pic.data], { type: pic.format });
                 const url = URL.createObjectURL(blob);
                 albumArt.innerHTML = `<img src="${url}" alt="Album Art">`;
             }
+
+            // Store title, artist, duration in playlistMeta
+            playlistMeta[currentIndex] = playlistMeta[currentIndex] || {};
+            if (common.title) playlistMeta[currentIndex].title = common.title;
+            if (common.artist) playlistMeta[currentIndex].artist = common.artist;
+            if (format.duration) playlistMeta[currentIndex].duration = format.duration;
+            renderPlaylist();
+
+            // Build ticker text
+            let tickerText = displayArtist ? `${displayArtist} - ${displayTitle}` : displayTitle;
+            if (common.track?.no) tickerText = `${common.track.no}. ${tickerText}`;
+            if (common.comment?.[0]) {
+                const comment = common.comment[0];
+                const commentText = typeof comment === 'string' ? comment : (comment.text || String(comment));
+                tickerText += `  ·  ${commentText}`;
+            }
+            startTicker(tickerText);
+
         } catch (err) {
             console.error('Error reading metadata:', err);
+            // Still start ticker with filename
+            startTicker(displayTitle);
         }
+    } else {
+        startTicker(displayTitle);
     }
 }
 
@@ -1862,6 +2044,122 @@ function handleKeyboard(e) {
             e.preventDefault();
             toggleEffectsMenu();
             break;
+    }
+}
+
+// ============================================================================
+// STOP
+// ============================================================================
+function stopAudio() {
+    audio.pause();
+    audio.currentTime = 0;
+    isPlaying = false;
+    updatePlayButton(false);
+    progressFill.style.width = '0%';
+    progressHandle.style.left = '0%';
+    currentTimeEl.textContent = '0:00';
+    if (plCurrentTime) plCurrentTime.textContent = '0:00';
+}
+
+// ============================================================================
+// PANEL VISIBILITY
+// ============================================================================
+function applyPanelVisibility() {
+    if (eqPanel) eqPanel.style.display = showEqPanel ? '' : 'none';
+    if (playlistPanel) playlistPanel.style.display = showPlaylistPanel ? '' : 'none';
+    if (btnEqToggle) btnEqToggle.classList.toggle('active', showEqPanel);
+    if (btnPlToggle) btnPlToggle.classList.toggle('active', showPlaylistPanel);
+}
+
+// ============================================================================
+// PLAYLIST RENDER
+// ============================================================================
+function renderPlaylist() {
+    if (!playlistTracks) return;
+
+    if (playlist.length === 0) {
+        playlistTracks.innerHTML = `
+            <div class="playlist-empty">
+                <div class="pl-empty-icon">〜</div>
+                <div>Drop audio files here or press ⏏ to open</div>
+            </div>`;
+        if (totalTimeEl) totalTimeEl.textContent = '0:00';
+        return;
+    }
+
+    // Calculate total duration
+    let totalSecs = 0;
+    playlistMeta.forEach(m => { if (m && m.duration) totalSecs += m.duration; });
+    if (totalTimeEl) totalTimeEl.textContent = formatTime(totalSecs);
+
+    const html = playlist.map((filePath, i) => {
+        const meta = playlistMeta[i];
+        const dur = (meta && meta.duration) ? formatTime(meta.duration) : '?:??';
+        const name = meta && meta.title
+            ? (meta.artist ? `${meta.artist} - ${meta.title}` : meta.title)
+            : path.basename(filePath, path.extname(filePath));
+        const isActive = i === currentIndex;
+        const isSelected = i === selectedPlaylistIdx;
+        return `<div class="pl-track${isActive ? ' pl-active' : ''}${isSelected ? ' pl-selected' : ''}" data-idx="${i}">
+            <span class="pl-track-num">${i + 1}.</span>
+            <span class="pl-track-name">${escapeHtml(name)}</span>
+            <span class="pl-track-dur">${dur}</span>
+        </div>`;
+    }).join('');
+
+    playlistTracks.innerHTML = html;
+
+    // Attach click handlers
+    playlistTracks.querySelectorAll('.pl-track').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.idx, 10);
+            selectedPlaylistIdx = idx;
+            document.querySelectorAll('.pl-track').forEach(r => r.classList.remove('pl-selected'));
+            el.classList.add('pl-selected');
+        });
+        el.addEventListener('dblclick', () => {
+            const idx = parseInt(el.dataset.idx, 10);
+            currentIndex = idx;
+            selectedPlaylistIdx = idx;
+            loadTrack(idx);
+            play();
+        });
+    });
+
+    // Scroll active track into view
+    const activeEl = playlistTracks.querySelector('.pl-active');
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================================
+// MINI VISUALIZER (in main display)
+// ============================================================================
+function drawMiniViz() {
+    if (!miniVizCtx || !miniVizCanvas || !analyser || !dataArray) return;
+
+    analyser.getByteFrequencyData(dataArray);
+
+    const w = miniVizCanvas.width;
+    const h = miniVizCanvas.height;
+    miniVizCtx.clearRect(0, 0, w, h);
+    miniVizCtx.fillStyle = '#020a0e';
+    miniVizCtx.fillRect(0, 0, w, h);
+
+    const barCount = 18;
+    const barW = Math.floor(w / barCount) - 1;
+    const step = Math.floor(dataArray.length / barCount);
+
+    for (let i = 0; i < barCount; i++) {
+        const val = dataArray[i * step] / 255;
+        const barH = Math.max(1, Math.floor(val * h));
+        const hue = 180 + i * 4;
+        const alpha = 0.5 + val * 0.5;
+        miniVizCtx.fillStyle = `hsla(${hue}, 90%, 60%, ${alpha})`;
+        miniVizCtx.fillRect(i * (barW + 1), h - barH, barW, barH);
     }
 }
 
