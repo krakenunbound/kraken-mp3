@@ -1,26 +1,26 @@
 # Dependencies
 node_modules/
 
-# Build output (releases uploaded to GitHub Releases)
+# Build output
 dist/
+dist_*/
+src_backup*/
 
-# Sample audio files
+# Local installers (rebuilt or copied from Winamp project)
+Install File/*.exe
+Install File/*.blockmap
+
+# Sample audio
 mp3/
 
-# Local IDE/tool settings
-.claude/
+# IDE
 .vscode/
 .idea/
 
-# OS files
+# OS / logs
 .DS_Store
 Thumbs.db
-
-# Debug logs
 *.log
 npm-debug.log*
-
-# Temporary Files
-tmpclaude-*
 
 winCodeSign_backup/

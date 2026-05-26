@@ -1,6 +1,10 @@
-# Kraken MP3 Player
+# Kraken MP3 Player (legacy UI)
 
-A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring customizable particle effects, audio visualizers, and rotating background wallpapers.
+> **Released app (Winamp Edition):** [kraken-mp3-winamp](https://github.com/krakenunbound/kraken-mp3-winamp) — installers in **`Install File`**, full **[USER_GUIDE](https://github.com/krakenunbound/kraken-mp3-winamp/blob/master/USER_GUIDE.md)** on that repo.
+
+This folder is an older compact UI variant. The table below still applies to playback in both trees.
+
+A compact MP3 player with the Kraken Unbound aesthetic — particle effects, audio visualizers, and rotating background wallpapers.
 
 ## Screenshots
 
@@ -20,7 +24,7 @@ A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring
   - **10-band Graphic EQ**: Presets (Rock, Pop, etc.), Preamp control, and custom tuning
   - Rotating background wallpapers with smooth crossfade
   - Animated Kraken logo as default album art
-- **Audio Support**: MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS
+- **Audio support**: MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS (open/add in app; WMA/Opus may not get installer file associations on the Winamp release)
 - **Metadata Display**: Title, Artist, Album, Track Number
 - **Scrolling Comment**: MP3 comment metadata scrolls across the display (like a news ticker)
 - **Album Art**: Displays embedded album art from audio files
@@ -38,21 +42,11 @@ A compact, Winamp-style MP3 player with the Kraken Unbound aesthetic - featuring
 
 ## Installation
 
-### Windows Installer
+Use the **`Install File`** folder (or [Winamp Edition releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)):
 
-1. Download `Kraken MP3 Setup 1.0.1.exe` from the releases
-2. Run the installer (you may need to click "More info" → "Run anyway" on Windows SmartScreen)
-3. Choose installation directory and options
-4. The installer will:
-   - Install Kraken MP3 to your chosen location
-   - Create desktop and Start Menu shortcuts
-   - Register file associations for audio formats
-
-**Note**: On first run, Windows SmartScreen may scan the unsigned executable. If it appears nothing happens on double-click, wait a moment and try again - this is a one-time scan.
-
-### Portable Version
-
-The `Kraken_MP3_Portable.exe` runs without installation. It extracts to a temp folder on each launch, so startup is slightly slower than the installed version.
+1. Run **`Kraken MP3 Setup 1.0.0.exe`** for a normal install, or **`Kraken MP3 1.0.0.exe`** for portable.
+2. On SmartScreen, choose **More info** → **Run anyway** if needed (unsigned build).
+3. Optional: enable file associations for MP3, FLAC, WAV, OGG, M4A, AAC during setup.
 
 ### Development
 
@@ -78,10 +72,7 @@ The `Kraken_MP3_Portable.exe` runs without installation. It extracts to a temp f
    npm run build:win
    ```
 
-3. Output files in the `dist` folder:
-   - `Kraken MP3 Setup 1.0.2.exe` - Windows installer
-   - `Kraken_MP3_Portable.exe` - Portable single-file executable
-   - `win-unpacked/` - Unpacked application folder
+3. Output in `dist/`; copy installers to **`Install File`** for easy access (see [kraken-mp3-winamp](https://github.com/krakenunbound/kraken-mp3-winamp) for the maintained Winamp build).
 
 ## File Association
 
