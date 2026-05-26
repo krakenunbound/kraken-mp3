@@ -120,6 +120,10 @@ Based on the Kraken Unbound website theme:
 --text-secondary: #8aa4bc
 ```
 
+## Credits
+
+**The Kraken** (Kraken Unbound) — creator. Shipped Winamp Edition: [kraken-mp3-winamp](https://github.com/krakenunbound/kraken-mp3-winamp).
+
 ## License
 
-MIT License - Kraken Unbound
+MIT — Copyright © 2026 The Kraken (Kraken Unbound)

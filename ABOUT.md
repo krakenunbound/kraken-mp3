@@ -1,5 +1,7 @@
 # Kraken MP3 Player — Project Notes
 
+**Creator:** The Kraken (Kraken Unbound).
+
 **GitHub Repository:** https://github.com/krakenunbound/kraken-mp3
 
 ## Overview
